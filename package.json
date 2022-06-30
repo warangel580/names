@@ -1,0 +1,10 @@
+{
+  "scripts": {
+    "parse": "node src/parse.js",
+    "transform": "node src/transform.js",
+    "list": "node src/list.js"
+  },
+  "dependencies": {
+    "@warangel580/utils": "^0.0.2"
+  }
+}
