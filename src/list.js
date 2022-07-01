@@ -4,14 +4,12 @@ const { list } = require("./computing");
 
 let data = parseJson(readData('transformed.json'));
 
-// list [year] [sortBy=gender|popularity]
-let year   = process.argv[2]
-let sortBy = process.argv[3]
+// list [sortBy=gender|popularity]
+let sortBy = process.argv[2]
 
-if (year == '_')   year   = undefined;
 if (sortBy == '_') sortBy = undefined;
 
-let result = list(data, year, sortBy)
+let result = list(data, sortBy)
 
 writeData('list.txt', result);
 

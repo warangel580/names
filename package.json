@@ -5,6 +5,6 @@
     "list": "node src/list.js"
   },
   "dependencies": {
-    "@warangel580/utils": "^0.0.2"
+    "@warangel580/utils": "^0"
   }
 }

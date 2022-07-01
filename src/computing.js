@@ -1,17 +1,14 @@
-const { get, each, transform } = require("@warangel580/utils")
+const { get, setUnsafe, pushLast, each, transform } = require("@warangel580/utils")
 const { ratio, progress } = require("./utils")
 
-let parse = function (data) {
+let parse = function (data, minYear, maxYear) {
   let [headers, ...contents] = data.split("\r\n");
 
   headers = headers.split(';');
 
   let total = contents.length;
-  let stats = {
-    names: {},
-  };
 
-  each(contents, (line, lineIndex) => {
+  return transform({}, contents, (stats, line, lineIndex) => {
     let parts = line.split(';');
 
     let attrs = transform({}, parts, (attrs, value, attributeIndex) => {
@@ -25,25 +22,27 @@ let parse = function (data) {
     let year   = get(attrs, 'year', '?')
     let count  = parseInt(get(attrs, 'count', '0'))
 
-    if (name != '_PRENOMS_RARES' && name != '?') {
-      // Equivalent to setUnsafe(stats, ['names', name, 'genders', gender, 'years', year, 'total'], count)
-      if (! stats.names[name])                             stats.names[name]                             = { genders: {}, years: {} }
-      if (! stats.names[name].genders[gender])             stats.names[name].genders[gender]             = { years: {} }
-      if (! stats.names[name].genders[gender].years[year]) stats.names[name].genders[gender].years[year] = { total: count };
+    let matchYear = true;
 
-      // Equivalent to setUnsafe(stats, ['names', name, 'years', year, 'genders', gender, 'total'], count)
-      if (! stats.names[name].years[year])                 stats.names[name].years[year]                 = { genders: {} }
-      if (! stats.names[name].years[year].genders[gender]) stats.names[name].years[year].genders[gender] = { total: count };
+    if (minYear) {
+      matchYear = matchYear && year >= minYear;
+    }
+
+    if (maxYear) {
+      matchYear = matchYear && year <= maxYear;
+    }
+
+    if (name != '_PRENOMS_RARES' && name != '?' && matchYear) {
+      stats = setUnsafe(stats, ['names', name, 'genders', gender, 'years',   year,   'total'], count)
+      stats = setUnsafe(stats, ['names', name, 'years',   year,   'genders', gender, 'total'], count)
     }
 
     // Show progress in case it's slow
     progress(lineIndex, total);
+
+    return stats;
   });
-
-  return stats;
 }
-
-// stats.names[name].genders[gender].years[year].total
 
 let _transform = (data) => {
   let fullTotal  = 0;
@@ -60,18 +59,19 @@ let _transform = (data) => {
         genderTotal += get(yearData, 'total', 0);
       })
   
-      data.names[name].genders[gender].total = genderTotal
-      nameTotal += genderTotal;
-  
+      data = setUnsafe(data, ['names', name, 'genders', gender, 'total'], genderTotal);
+      
       each(genderData.years, (yearData, year) => {
-        data.names[name].genders[gender].years[year].ratio = ratio(get(yearData, 'total', 0), genderTotal);
+        data = setUnsafe(data, ['names', name, 'genders', gender, 'years', year, 'ratio'], ratio(get(yearData, 'total', 0), genderTotal));
       })
+
+      nameTotal += genderTotal;
     })
 
-    data.names[name].total = nameTotal;
+    data = setUnsafe(data, ['names', name, 'total'], nameTotal);
 
     each(nameData.genders, (genderData, gender) => {
-      data.names[name].genders[gender].ratio = ratio(get(genderData, 'total', 0), nameTotal);
+      data = setUnsafe(data, ['names', name, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), nameTotal));
     })
 
     each(nameData.years, (yearData, year) => {
@@ -81,10 +81,10 @@ let _transform = (data) => {
         yearTotal += get(genderData, 'total', 0);
       })
 
-      data.names[name].years[year].total = yearTotal
+      data = setUnsafe(data, ['names', name, 'years', year, 'total'], yearTotal);
 
       each(yearData.genders, (genderData, gender) => {
-        data.names[name].years[year].genders[gender].ratio = ratio(get(genderData, 'total', 0), yearTotal);
+        data = setUnsafe(data, ['names', name, 'years', year, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), yearTotal));
       })
     })
 
@@ -98,10 +98,10 @@ let _transform = (data) => {
 
   nameIndex = 0;
   each(data.names, (nameData, name) => {
-    data.names[name].ratio = ratio(get(nameData, 'total', 0), fullTotal);
+    data = setUnsafe(data, ['names', name, 'ratio'], ratio(get(nameData, 'total', 0), fullTotal));
 
     each(nameData.years, (yearData, year) => {
-      data.names[name].years[year].ratio = ratio(get(yearData, 'total', 0), fullTotal);
+      data = setUnsafe(data, ['names', name, 'years', year, 'ratio'], ratio(get(yearData, 'total', 0), fullTotal));
     })
 
     // Show progress in case it's slow
@@ -113,27 +113,27 @@ let _transform = (data) => {
   return data;
 }
 
-let list = (data, year = undefined, sortBy = "gender") => {
+let list = (data, sortBy = "gender") => {
   let names = [];
 
-  each(data.names, (nameData, name) => {
-    let ratioH, ratioF, usage, usageR;
-    if (! year) {
-      ratioH = nameData.genders.H?.ratio || 0;
-      ratioF = nameData.genders.F?.ratio || 0;
-      usage  = nameData.total;
-    } else {
-      ratioH = nameData.years[year]?.genders.H?.ratio || 0;
-      ratioF = nameData.years[year]?.genders.F?.ratio || 0;
-      usage  = nameData.years[year]?.total || 0;
-    }
+  let totalNames = Object.keys(data.names).length;
+  let nameIndex  = 0;
 
+  each(data.names, (nameData, name) => {
+    let ratioH = get(nameData, ['genders', 'H', 'ratio'], 0);
+    let ratioF = get(nameData, ['genders', 'F', 'ratio'], 0);
+    let usage  = get(nameData, 'total', 0);
     let _ratio = ratioH > ratioF ? ratioH : ratioF;
     let type   = ratioH > ratioF ?    'H' :    'F';
 
     if (usage <= 0) return;
 
-    names.push([name, ratioF, type, _ratio, usage]);
+    names = pushLast(names, [name, ratioF, type, _ratio, usage]);
+
+    // Show progress in case it's slow
+    progress(nameIndex, totalNames);
+
+    nameIndex++;
   });
 
   names.sort(([,r1,t1,,u1], [,r2,t2,,u2]) => {
