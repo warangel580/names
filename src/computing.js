@@ -71,7 +71,7 @@ let _transform = (data) => {
     data = setUnsafe(data, ['names', name, 'total'], nameTotal);
 
     each(nameData.genders, (genderData, gender) => {
-      data = setUnsafe(data, ['names', name, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), nameTotal, 0));
+      data = setUnsafe(data, ['names', name, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), nameTotal));
     })
 
     each(nameData.years, (yearData, year) => {
@@ -125,7 +125,7 @@ let list = (data, sortBy = "gender_spectrum", minUsage, maxUsage) => {
     let usage  = get(nameData, 'total', 0);
     let _ratio = ratioH > ratioF ? ratioH : ratioF;
     let type   = ratioH > ratioF ?    'H' :    'F';
-
+    
     if (usage <= 0) return;
     if (minUsage && usage < minUsage) return;
     if (maxUsage && usage > maxUsage) return;
@@ -181,21 +181,66 @@ let list = (data, sortBy = "gender_spectrum", minUsage, maxUsage) => {
   });
 
   let result = "";
-
+  
   each(names, ([name, _, type, ratio, usage]) => {
     let label = type + " " + String(ratio) + "%";
-
+    
     if (label == 'F 50%' || label == 'H 50%') label = "mixte";
-
+    
     result += [name.padEnd(30, ' '), label.padEnd(10, ' '), (String(usage)).padStart(10, ' ')].join(' ') + "\n";
   })
 
   return result;
 }
 
+let history = (data, name) => {
+  let nameHistory = get(data, ['names', name]);
+
+  if (! nameHistory) {
+    return `Aucune donnée trouvée pour le nom "${name}"`;
+  }
+
+  let result = `# Historique du prénom "${name}" \n\n`;
+
+  return transform(result, get(nameHistory, 'years'), (result, yearData, year) => {
+    if (year === 'XXXX') return result;
+
+    let totalF = get(yearData, ['genders', 'F', 'total'], 0);
+    let totalH = get(yearData, ['genders', 'H', 'total'], 0);
+
+    let comparator = totalF == totalH ? '=' : totalF > totalH ? '>' : '<';
+
+    let display = (total) => {
+      let result = "";
+      if (total == 0) result = "-";
+      else            result = String(total)
+      
+      return result.padStart(8, ' ')
+    }
+
+    let totalBoth = totalF + totalH;
+    let _ratio = (totalG) => {
+      return ("(" + String(ratio(totalG, totalBoth)) + "%)").padStart(8, ' ') + " ";
+    }
+
+    let displayF = display(totalF);
+    let displayH = display(totalH);
+
+    let ratioF = _ratio(totalF);
+    let ratioH = _ratio(totalH);
+
+    return result + [
+      year,
+      ' |   F', displayF, ratioF,
+      ' |  ' + comparator,
+      ' |   H', displayH, ratioH,
+    ].join(" ") + `\n`;
+  })
+}
 
 module.exports = {
   parse,
   transform: _transform,
   list,
+  history,
 }

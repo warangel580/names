@@ -6,5 +6,4 @@ let data = parseJson(readData('parsed.json'));
 
 data = transform(data);
 
-writeData('transformed.json', JSON.stringify(data, null, 2));
-
+writeData('stats.json', JSON.stringify(data, null, 2));
