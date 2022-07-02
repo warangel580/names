@@ -1,4 +1,4 @@
-const { parseJson, get } = require("@warangel580/utils")
+const { parseJson } = require("@warangel580/utils")
 const { readData, writeData } = require("./filesystem");
 const { list } = require("./computing");
 
