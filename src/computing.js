@@ -71,7 +71,7 @@ let _transform = (data) => {
     data = setUnsafe(data, ['names', name, 'total'], nameTotal);
 
     each(nameData.genders, (genderData, gender) => {
-      data = setUnsafe(data, ['names', name, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), nameTotal));
+      data = setUnsafe(data, ['names', name, 'genders', gender, 'ratio'], ratio(get(genderData, 'total', 0), nameTotal, 0));
     })
 
     each(nameData.years, (yearData, year) => {
@@ -113,7 +113,7 @@ let _transform = (data) => {
   return data;
 }
 
-let list = (data, sortBy = "gender") => {
+let list = (data, sortBy = "gender_spectrum", minUsage, maxUsage) => {
   let names = [];
 
   let totalNames = Object.keys(data.names).length;
@@ -127,6 +127,8 @@ let list = (data, sortBy = "gender") => {
     let type   = ratioH > ratioF ?    'H' :    'F';
 
     if (usage <= 0) return;
+    if (minUsage && usage < minUsage) return;
+    if (maxUsage && usage > maxUsage) return;
 
     names = pushLast(names, [name, ratioF, type, _ratio, usage]);
 
@@ -136,28 +138,56 @@ let list = (data, sortBy = "gender") => {
     nameIndex++;
   });
 
-  names.sort(([,r1,t1,,u1], [,r2,t2,,u2]) => {
-    if (t1 != t2) {
-      return t1 == 'F' ? -1 : 1;
-    }
+  names.sort(([,r1,t1,m1,u1], [,r2,t2,m2,u2]) => {
+    if (sortBy == "gender_spectrum") {
+      // Sort by "gender %" first into a spectrum
+      if (t1 != t2) {
+        return t1 == 'F' ? -1 : 1;
+      }
 
-    if (sortBy == "gender") {
-      // Sort by "gender %" first
       return r1 != r2
       ? r2 - r1
       : t1 == 'F' ? u2 - u1 : u1 - u2;
     }
 
-    // Sort by popularity first
-    return u2 != u1
-      ? t1 == 'F' ? u2 - u1 : u1 - u2
-      : r2 - r1;
+    if (sortBy == "popularity_spectrum") {
+      // Sort by popularity first into a spectrum
+      if (t1 != t2) {
+        return t1 == 'F' ? -1 : 1;
+      }
+
+      return u2 != u1
+        ? t1 == 'F' ? u2 - u1 : u1 - u2
+        : r2 - r1;
+    }
+
+    if (sortBy == "popularity") {
+      // Just the more popular first
+      return u2 - u1;
+    }
+
+    if (sortBy == "gender_popularity") {
+      // Just the more "gendered" first + popularity
+      return m2 == m1 ? u2 - u1 : m2 - m1;
+    }
+
+    if (sortBy == "gender") {
+      // Just the more "gendered" first + alphabetical order
+      return m2 - m1;
+    }
+    
+    // Unknown sort, just take it as is
+    return 0;
   });
 
   let result = "";
 
   each(names, ([name, _, type, ratio, usage]) => {
-    result += [name.padEnd(30, ' '), (type + " " + String(ratio) + "%").padEnd(10, ' '), (String(usage)).padStart(10, ' ')].join(' ') + "\n";
+    let label = type + " " + String(ratio) + "%";
+
+    if (label == 'F 50%') label = "mixte";
+
+    result += [name.padEnd(30, ' '), label.padEnd(10, ' '), (String(usage)).padStart(10, ' ')].join(' ') + "\n";
   })
 
   return result;

@@ -1,7 +1,7 @@
-let ratio = (current, total) => {
+let ratio = (current, total, precision = 1) => {
   if (total <= 0) return 0;
 
-  return parseInt(current / total * 1000) / 10;
+  return parseInt(current / total * 100 * Math.pow(10, precision)) / Math.pow(10, precision); // @TODO: pow
 }
 
 let dd = (...args) => { console.log(...args); process.exit(0); }
