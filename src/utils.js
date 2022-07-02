@@ -13,8 +13,15 @@ let progress = (index, total) => {
   }
 }
 
+let arg = (index) => {
+  let value = process.argv[index];
+  
+  return value == '_' ? undefined : value;
+}
+
 module.exports = {
   ratio,
   dd,
   progress,
+  arg
 }

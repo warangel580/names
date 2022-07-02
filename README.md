@@ -1,7 +1,5 @@
 # Répartition des prénoms de naissance en France
 
-4 axes : genre / prénom (évidemment) / l'année / le nombre de fois où il a été utilisé
-
 ## Utilisation
 
 - Mettre les dépendances à jour (`yarn` ou `npm install`)

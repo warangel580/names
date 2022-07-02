@@ -185,7 +185,7 @@ let list = (data, sortBy = "gender_spectrum", minUsage, maxUsage) => {
   each(names, ([name, _, type, ratio, usage]) => {
     let label = type + " " + String(ratio) + "%";
 
-    if (label == 'F 50%') label = "mixte";
+    if (label == 'F 50%' || label == 'H 50%') label = "mixte";
 
     result += [name.padEnd(30, ' '), label.padEnd(10, ' '), (String(usage)).padStart(10, ' ')].join(' ') + "\n";
   })
