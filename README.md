@@ -35,6 +35,6 @@ Utilisation du prénom "MARIE-ANTOINE" au fil des années
 - Aller sur https://www.insee.fr/fr/statistiques/2540004
 - Fichiers France hors Mayotte
 - Télécharger le fichier .csv (sous format zip)
-- L'extraire et renommer le fichier csv en data.csv
+- L'extraire et renommer le fichier csv en names.csv
 - Le mettre dans data/
 - Mettre en header `gender;name;year;count` dans le fichier csv
