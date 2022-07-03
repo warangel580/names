@@ -3,6 +3,7 @@
 ## Utilisation
 
 - Mettre les dépendances à jour (`yarn` ou `npm install`)
+- Télécharger la source des données (cf. Source des données plus bas)
 - Parsing .csv -> .json : `yarn run parse [minYear] [maxYear]`
 - Statistiques sur le fichier .json pour enrichir les données : `yarn run stats`
 
