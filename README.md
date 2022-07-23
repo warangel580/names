@@ -4,7 +4,7 @@
 
 - Mettre les dépendances à jour (`yarn` ou `npm install`)
 - Télécharger la source des données (cf. Source des données plus bas)
-- Parsing .csv -> .json : `yarn run parse [minYear] [maxYear]`
+- Parsing .csv -> .json : `yarn run parse [minYear] [maxYear] [regex]`
 - Statistiques sur le fichier .json pour enrichir les données : `yarn run stats`
 
 - Lister les prénoms avec leur répartition : `yarn run list [sortBy=gender_spectrum|popularity_spectrum|popularity|gender_popularity|gender] [minUsage] [maxUsage]`
@@ -29,6 +29,9 @@ Les prénoms peu donnés entre 1980 et 1999 ordonnés par genre puis popularité
 
 Utilisation du prénom "MARIE-ANTOINE" au fil des années
 - `yarn run parse && yarn run stats && yarn run history "MARIE-ANTOINE"`
+
+Les prénoms démarrant avec A et finissant par A triés par popularité dans leur genre respectifs
+- `yarn run parse _ _ "^.?A.*A.?$" && yarn run stats && yarn run list popularity_spectrum`
 
 ## Source des données
 

@@ -1,10 +1,12 @@
 const { get, setUnsafe, pushLast, each, transform } = require("@warangel580/utils")
 const { ratio, progress } = require("./utils")
 
-let parse = function (data, minYear, maxYear) {
+let parse = function (data, minYear, maxYear, nameRegex) {
   let [headers, ...contents] = data.split("\r\n");
 
   headers = headers.split(';');
+
+  if (nameRegex) nameRegex = nameRegex.toUpperCase();
 
   let total = contents.length;
 
@@ -32,7 +34,15 @@ let parse = function (data, minYear, maxYear) {
       matchYear = matchYear && year <= maxYear;
     }
 
-    if (name != '_PRENOMS_RARES' && name != '?' && matchYear) {
+    let matchName = true;
+
+    if (nameRegex) {
+      let matches = name.match(nameRegex);
+
+      matchName = !! matches && matches.length > 0;
+    }
+
+    if (name != '_PRENOMS_RARES' && name != '?' && matchYear && matchName) {
       stats = setUnsafe(stats, ['names', name, 'genders', gender, 'years',   year,   'total'], count)
       stats = setUnsafe(stats, ['names', name, 'years',   year,   'genders', gender, 'total'], count)
     }
